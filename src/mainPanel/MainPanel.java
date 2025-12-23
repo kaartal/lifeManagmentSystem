@@ -9,7 +9,6 @@ import javax.swing.*;
 import java.awt.*;
 
 public class MainPanel extends JPanel {
-
     private JButton accountDetails;
     private JButton financeTracker;
     private JButton taskPlanner;
@@ -17,100 +16,143 @@ public class MainPanel extends JPanel {
     private JButton studyPlanner;
     private JButton fitnessPlanner;
     private JButton logoutButton;
-
     private String currentUserEmail;
-
-    private void createUIComponents() {
-        accountDetails = new JButton("Account Details");
-        financeTracker = new JButton("Finance Tracker");
-        taskPlanner = new JButton("Task Planner");
-        mealPlanner = new JButton("Meal Planner");
-        studyPlanner = new JButton("Study Planner");
-        fitnessPlanner = new JButton("Fitness Planner");
-        logoutButton = new JButton("Logout");
-    }
 
     public MainPanel(String email) {
         this.currentUserEmail = email;
         UserService userService = new UserService();
         String theme = userService.getUserTheme(currentUserEmail);
+setSize(950,720);
         setBackground(getColorFromTheme(theme));
+        setLayout(new BorderLayout());
 
-        setLayout(null);
-        setLayout(null);
+        //createUIComponents();
 
-        accountDetails.setBounds(50, 20, 200, 30);
-        add(accountDetails);
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        topPanel.setOpaque(false);
+        logoutButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        logoutButton.setBackground(new Color(220, 80, 80));
+        logoutButton.setForeground(Color.WHITE);
+        logoutButton.setFocusPainted(false);
+        topPanel.add(logoutButton);
 
-        financeTracker.setBounds(50, 60, 200, 30);
-        add(financeTracker);
+        JPanel mainButtonPanel = new JPanel();
+        mainButtonPanel.setLayout(new GridLayout(2, 3, 20, 20));
+        mainButtonPanel.setOpaque(false);
+        mainButtonPanel.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
 
-        taskPlanner.setBounds(50, 100, 200, 30);
-        add(taskPlanner);
+        JButton[] featureButtons = {
+                accountDetails, financeTracker, taskPlanner,
+                mealPlanner, studyPlanner, fitnessPlanner
+        };
 
-        mealPlanner.setBounds(50, 140, 200, 30);
-        add(mealPlanner);
+        for (int i = 0; i < featureButtons.length; i++) {
+            JButton button = featureButtons[i];
+            button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            button.setBackground(new Color(70, 130, 180));
+            button.setForeground(Color.WHITE);
+            button.setFocusPainted(false);
+            button.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(new Color(50, 100, 150), 2),
+                    BorderFactory.createEmptyBorder(15, 10, 15, 10)
+            ));
 
-        studyPlanner.setBounds(50, 180, 200, 30);
-        add(studyPlanner);
+            final int index = i;
+            button.addActionListener(e -> showFeatureInProgress(index));
 
-        fitnessPlanner.setBounds(50, 220, 200, 30);
-        add(fitnessPlanner);
+            mainButtonPanel.add(button);
+        }
 
-        logoutButton.setBounds(350, 20, 150, 30);
-        add(logoutButton);
+        add(topPanel, BorderLayout.NORTH);
+        add(mainButtonPanel, BorderLayout.CENTER);
 
         logoutButton.addActionListener(e -> logoutAction());
-
-        // OPEN ACCOUNT DETAILS INFORMATION
-        accountDetails.addActionListener(e -> {
-            AccountDetailsFrame frame =
-                    new AccountDetailsFrame(currentUserEmail);
-            frame.setVisible(true);
-
-            SwingUtilities.getWindowAncestor(this).setVisible(false);
-        });
     }
+
+   // private void createUIComponents() {
+      //  accountDetails = new JButton("Account Details");
+       // financeTracker = new JButton("Finance Tracker");
+       // taskPlanner = new JButton("Task Planner");
+       // mealPlanner = new JButton("Meal Planner");
+       // studyPlanner = new JButton("Study Planner");
+       // fitnessPlanner = new JButton("Fitness Planner");
+        //logoutButton = new JButton("Odjavi se");
+    //}
+
+    private void showFeatureInProgress(int featureIndex) {
+        String[] featureNames = {
+                "Account Details",
+                "Finance Tracker",
+                "Task Planner",
+                "Meal Planner",
+                "Study Planner",
+                "Fitness Planner"
+        };
+
+        if (featureIndex == 0) {
+            AccountDetailsFrame frame = new AccountDetailsFrame(currentUserEmail);
+            frame.setVisible(true);
+            Window mainWindow = SwingUtilities.getWindowAncestor(this);
+            mainWindow.setVisible(false);
+            frame.setSize(mainWindow.getSize());
+            frame.setLocation(mainWindow.getLocation());
+            return;
+        }
+
+        String message = String.format(
+                "<html><div style='text-align: center;'><h3>%s</h3>"
+                        + "<p style='margin: 10px 0;'>Ova funkcionalnost je trenutno u izradi.</p>"
+                        + "<p>Vraćamo se uskoro sa punom verzijom!</p></div></html>",
+                featureNames[featureIndex]
+        );
+
+        JLabel messageLabel = new JLabel(message);
+        messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        JOptionPane.showMessageDialog(
+                this,
+                messageLabel,
+                "Funkcionalnost u izradi",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+    }
+
     private Color getColorFromTheme(String theme) {
         if (theme == null) {
-            return Color.GREEN;
+            return new Color(166, 244, 136);
         }
 
         switch (theme) {
             case "Plava":
-                return Color.BLUE;
+                return new Color(173, 216, 230);
             case "Roza":
-                return Color.PINK;
-            case "Narančasta":
-                return Color.ORANGE;
+                return new Color(255, 228, 225);
+            case "Narandzasta":
+                return new Color(205, 162, 132);
             case "Tamna/Dark":
-                return Color.DARK_GRAY;
+                return new Color(40, 44, 52);
             case "Cyberpunk":
-                return new java.awt.Color(20, 20, 30);
+                return new Color(10, 10, 20);
             default:
-                return java.awt.Color.GREEN;
+                return new Color(166, 244, 136);
         }
     }
 
-
     private void logoutAction() {
-
         int confirm = JOptionPane.showConfirmDialog(
                 this,
-                "Da li ste sigurni da se želite odjaviti?",
-                "Odjava",
-                JOptionPane.YES_NO_OPTION
+                "<html><div style='text-align: center;'>"
+                        + "<p style='font-size: 14px; margin-bottom: 10px;'>Da li ste sigurni da se želite odjaviti?</p>"
+                        + "</div></html>",
+                "Potvrda odjave",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
         );
 
         if (confirm == JOptionPane.YES_OPTION) {
-
             SessionManager.logout();
-
             SwingUtilities.getWindowAncestor(this).dispose();
-
             new LoginUser().setVisible(true);
         }
-
     }
-
 }

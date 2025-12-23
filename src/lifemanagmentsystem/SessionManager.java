@@ -5,6 +5,7 @@ public class SessionManager {
     private static String currentUserEmail = null;
 
     public static void login(String email) {
+
         currentUserEmail = email;
     }
 

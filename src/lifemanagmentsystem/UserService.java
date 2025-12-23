@@ -58,6 +58,7 @@ public class UserService {
     }
 
     public Document getUserByEmail(String email) {
+
         return users.find(new Document("email", email)).first();
     }
 

@@ -6,26 +6,27 @@ import mainPanel.MainPanel;
 import javax.swing.*;
 
 public class AccountDetailsFrame extends JFrame {
-
+    // TEXT FIELD
     private JTextField editName;
     private JTextField editLastname;
     private JTextField editMail;
-
+    // PASSWORD FIELD
     private JPasswordField oldPasswordField;
     private JPasswordField newPasswordField;
     private JPasswordField editPassword;
+    // ALL LABELS
     private JLabel titleLabel;
     private JLabel nameLabel;
     private JLabel lastnameLabel;
     private JLabel mailLabel;
     private JLabel oldPasswordLabel;
     private JLabel newPasswordLabel;
-
+    //BUTTONS
     private JButton saveChanges;
     private JButton backMain;
     private JComboBox themeComboBox;
     private JLabel themeLabel;
-
+    // CATCH ONLINE USER ON PROGRAM
     private final UserService userService;
     private final String currentUserEmail;
 
@@ -34,7 +35,7 @@ public class AccountDetailsFrame extends JFrame {
         this.userService = new UserService();
 
         setTitle("Account Details");
-        setSize(420, 380);
+        setSize(950, 720);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
@@ -99,7 +100,7 @@ public class AccountDetailsFrame extends JFrame {
         themeLabel = new JLabel("Tema:");
         themeLabel.setBounds(50, 210, 100, 25);
         panel.add(themeLabel);
-        themeComboBox = new JComboBox<>(new String[]{"Zelena", "Plava", "Roza", "Narančasta", "Cyberpunk"});
+        themeComboBox = new JComboBox<>(new String[]{"Zelena", "Plava", "Roza", "Narandzasta", "Cyberpunk"});
         themeComboBox.setBounds(150, 210, 165, 25);
         panel.add(themeComboBox);
         saveChanges.addActionListener(e -> saveChangesAction());
@@ -107,7 +108,7 @@ public class AccountDetailsFrame extends JFrame {
         backMain.addActionListener(e -> {
             this.dispose();
             JFrame frame = new JFrame("Life Management System");
-            frame.setSize(600, 400);
+            frame.setSize(950, 720);
             frame.setLocationRelativeTo(null);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.add(new MainPanel(currentUserEmail));
@@ -156,15 +157,15 @@ public class AccountDetailsFrame extends JFrame {
         String finalPassword = user.getString("password");
         if (!newPassword.isEmpty()) {
             if (oldInputPassword.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Unesite stari password da biste promijenili šifru!");
+                JOptionPane.showMessageDialog(this, "Unesite staru šifru da biste promijenili šifru!");
                 return;
             }
             if (!userService.loginUser(currentUserEmail, oldInputPassword)) {
-                JOptionPane.showMessageDialog(this, "Stari password nije tačan!");
+                JOptionPane.showMessageDialog(this, "Stara šifra nije tačan!");
                 return;
             }
             if (newPassword.length() < 6) {
-                JOptionPane.showMessageDialog(this, "Novi password mora imati najmanje 6 karaktera!");
+                JOptionPane.showMessageDialog(this, "Nova šifra mora imati najmanje 6 karaktera!");
                 return;
             }
             finalPassword = newPassword;
