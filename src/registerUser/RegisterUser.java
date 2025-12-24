@@ -6,7 +6,23 @@ import lifemanagmentsystem.UserService;
 import javax.swing.*;
 import java.awt.*;
 
-public class RegisterUser extends JFrame { private JTextField inputName; private JLabel titleLabel; private JPanel nameLabel; private JTextField inputLastname; private JLabel lastnameLabel; private JLabel emailLabel; private JTextField inputEmail; private JLabel passwordLabel; private JPasswordField inputPassword; private JPasswordField inputRepeatPassword; private JLabel labelRepeatPassword; private JButton registerButton; private JButton backLogin; private final UserService userService; private JComboBox<String> themeComboBox; private boolean isValidEmail(String email) { return email.contains("@") && email.contains("."); }
+public class RegisterUser extends JFrame { private JTextField inputName;
+    private JLabel titleLabel;
+    private JPanel nameLabel;
+    private JTextField inputLastname;
+    private JLabel lastnameLabel;
+    private JLabel emailLabel;
+    private JTextField inputEmail;
+    private JLabel passwordLabel;
+    private JPasswordField inputPassword;
+    private JPasswordField inputRepeatPassword;
+    private JLabel labelRepeatPassword;
+    private JButton registerButton;
+    private JButton backLogin;
+    private final UserService userService;
+    private JComboBox<String> themeComboBox;
+
+
     public RegisterUser() {
         userService = new UserService();
         setTitle("LMS - Registracija korisnika");
@@ -16,7 +32,6 @@ public class RegisterUser extends JFrame { private JTextField inputName; private
         setLocationRelativeTo(null);
 
         JPanel mainPanel = new JPanel(new GridBagLayout()) {
-            @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g;
@@ -38,30 +53,23 @@ public class RegisterUser extends JFrame { private JTextField inputName; private
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
-
         gbc.anchor = GridBagConstraints.WEST;
-
         gbc.insets = new Insets(5, 0, 5, 0);
 
-
-
         Font titleFont = new Font("Segoe UI", Font.BOLD, 28);
-        Font labelFont = new Font("Segoe UI", Font.BOLD, 13);
-        Font inputFont = new Font("Segoe UI", Font.PLAIN, 15);
-
-
+        Font labelFont = new Font("Segoe UI", Font.BOLD, 15);
+        Font inputFont = new Font("Segoe UI", Font.PLAIN, 16);
 
         JLabel titleLabel = new JLabel("Kreirajte račun");
         titleLabel.setFont(titleFont);
         titleLabel.setForeground(Color.WHITE);
+        titleLabel.setFont(new Font("Arial", Font.PLAIN, 38));
         titleLabel.setHorizontalAlignment(SwingConstants.LEFT);
 
         mainPanel.add(titleLabel, gbc);
 
         gbc.gridy++;
         mainPanel.add(Box.createVerticalStrut(15), gbc);
-
-
 
         gbc.gridy++;
         mainPanel.add(createFieldPanel("Ime", labelFont, inputFont, "name"), gbc);
@@ -82,13 +90,14 @@ public class RegisterUser extends JFrame { private JTextField inputName; private
         themePanel.setOpaque(false);
 
         JLabel themeLabel = new JLabel("Tema aplikacije");
+        //themeLabel.setFont(new Font("Arial", Font.PLAIN, 28));
         themeLabel.setFont(labelFont);
         themeLabel.setForeground(Color.WHITE);
         themeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         themeComboBox = new JComboBox<>(new String[]{"Zelena", "Plava", "Roza", "Narandzasta", "Tamna", "Cyberpunk"});
-        themeComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         themeComboBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+        themeComboBox.setFont(new Font("Arial", Font.PLAIN, 16));
 
         themePanel.add(themeLabel);
         themePanel.add(Box.createVerticalStrut(5));
@@ -100,13 +109,13 @@ public class RegisterUser extends JFrame { private JTextField inputName; private
         gbc.gridy++;
         gbc.insets = new Insets(30, 0, 0, 0);
         registerButton = new JButton("Registruj se");
-        styleButton(registerButton, new Color(76, 175, 80));
+        buttonRegisterNewUser(registerButton, new Color(76, 175, 80));
         mainPanel.add(registerButton, gbc);
 
         gbc.gridy++;
         gbc.insets = new Insets(10, 0, 0, 0);
         backLogin = new JButton("Vrati se na prijavu");
-        styleSecondaryButton(backLogin);
+        buttonGoBackToLogin(backLogin);
         mainPanel.add(backLogin, gbc);
 
         add(mainPanel);
@@ -155,30 +164,31 @@ public class RegisterUser extends JFrame { private JTextField inputName; private
         return fieldPanel;
     }
 
+    // CHECK IS EMAIL INPUT FROM USER VALID
+    private boolean isValidEmail(String email)
+    {
+        return email.contains("@") && email.contains(".");
+    }
 
-
-
-
-    private void styleButton(JButton button, Color color) {
+    // BUTTON FOR REGISTER NEW USER
+    private void buttonRegisterNewUser(JButton button, Color color) {
         button.setFocusPainted(false);
         button.setBackground(color);
         button.setForeground(Color.WHITE);
-        button.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        button.setFont(new Font("Segoe UI", Font.BOLD, 17));
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.setBorder(BorderFactory.createEmptyBorder(12, 10, 12, 10));
     }
 
-    private void styleSecondaryButton(JButton button) {
+    // BUTTON FOR GO BACK TO LOGIN SECTION
+    private void buttonGoBackToLogin(JButton button) {
         button.setContentAreaFilled(false);
         button.setFocusPainted(false);
         button.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         button.setForeground(Color.WHITE);
-        button.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        button.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
-
-
-
 
     private void registerAction() {
         String name = inputName.getText();
@@ -203,6 +213,7 @@ public class RegisterUser extends JFrame { private JTextField inputName; private
         }
 
         if (!password.equals(repeatPassword)) {
+
             JOptionPane.showMessageDialog(this, "Šifre se ne poklapaju!");
             return;
         }

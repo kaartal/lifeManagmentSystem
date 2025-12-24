@@ -1,9 +1,12 @@
 package mainPanel;
 
 import accountDetails.AccountDetailsFrame;
+import financeTracker.FinanceTrackerForm;
 import lifemanagmentsystem.SessionManager;
 import lifemanagmentsystem.UserService;
+//import lifemanagmentsystem.UserTheme;
 import loginUser.LoginUser;
+
 
 import javax.swing.*;
 import java.awt.*;
@@ -22,15 +25,16 @@ public class MainPanel extends JPanel {
         this.currentUserEmail = email;
         UserService userService = new UserService();
         String theme = userService.getUserTheme(currentUserEmail);
-setSize(950,720);
-        setBackground(getColorFromTheme(theme));
+        SessionManager userTheme = new SessionManager();
+        setSize(950,720);
+        setBackground(SessionManager.getColorFromTheme(theme));
         setLayout(new BorderLayout());
 
         //createUIComponents();
 
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         topPanel.setOpaque(false);
-        logoutButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        logoutButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
         logoutButton.setBackground(new Color(220, 80, 80));
         logoutButton.setForeground(Color.WHITE);
         logoutButton.setFocusPainted(false);
@@ -69,7 +73,9 @@ setSize(950,720);
         logoutButton.addActionListener(e -> logoutAction());
     }
 
-   // private void createUIComponents() {
+
+
+    // private void createUIComponents() {
       //  accountDetails = new JButton("Account Details");
        // financeTracker = new JButton("Finance Tracker");
        // taskPlanner = new JButton("Task Planner");
@@ -99,6 +105,16 @@ setSize(950,720);
             return;
         }
 
+        //if (featureIndex == 1) {
+          //  FinanceTrackerForm frame = new FinanceTrackerForm(currentUserEmail);
+           // frame.setVisible(true);
+           // Window mainWindow = SwingUtilities.getWindowAncestor(this);
+           // mainWindow.setVisible(false);
+           // frame.setSize(mainWindow.getSize());
+           // frame.setLocation(mainWindow.getLocation());
+           // return;
+        //}
+
         String message = String.format(
                 "<html><div style='text-align: center;'><h3>%s</h3>"
                         + "<p style='margin: 10px 0;'>Ova funkcionalnost je trenutno u izradi.</p>"
@@ -117,26 +133,26 @@ setSize(950,720);
         );
     }
 
-    private Color getColorFromTheme(String theme) {
-        if (theme == null) {
-            return new Color(166, 244, 136);
-        }
-
-        switch (theme) {
-            case "Plava":
-                return new Color(173, 216, 230);
-            case "Roza":
-                return new Color(255, 228, 225);
-            case "Narandzasta":
-                return new Color(205, 162, 132);
-            case "Tamna/Dark":
-                return new Color(40, 44, 52);
-            case "Cyberpunk":
-                return new Color(10, 10, 20);
-            default:
-                return new Color(166, 244, 136);
-        }
-    }
+    //public Color getColorFromTheme(String theme) {
+       // if (theme == null) {
+         //   return new Color(166, 244, 136);
+        //}
+//
+        // switch (theme) {
+        //    case "Plava":
+         //       return new Color(173, 216, 230);
+         //   case "Roza":
+         //       return new Color(255, 228, 225);
+          //  case "Narandzasta":
+          //      return new Color(205, 162, 132);
+          //  case "Tamna/Dark":
+          //      return new Color(40, 44, 52);
+           // case "Cyberpunk":
+           //     return new Color(10, 10, 20);
+           // default:
+            //    return new Color(166, 244, 136);
+       // }
+    //}
 
     private void logoutAction() {
         int confirm = JOptionPane.showConfirmDialog(
