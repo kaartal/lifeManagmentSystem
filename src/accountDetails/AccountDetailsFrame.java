@@ -66,7 +66,7 @@ public class AccountDetailsFrame extends JFrame {
         root.add(title, BorderLayout.NORTH);
 
         JPanel card = new JPanel(new GridBagLayout());
-        card.setBackground(bgColor); // ❌ nema sjene
+        card.setBackground(bgColor);
         card.setBorder(new EmptyBorder(30, 60, 30, 60));
         root.add(card, BorderLayout.CENTER);
 

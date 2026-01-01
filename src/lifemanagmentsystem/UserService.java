@@ -8,7 +8,7 @@ public class UserService {
     private final MongoCollection<Document> users;
 
     public UserService() {
-        users = MongodbConnection.getDatabase().getCollection("users");
+        users = MongodbConnection.getDatabase().getCollection("usersLMS");
     }
 
     public boolean registerUser(String name, String lastname, String email, String password, String theme) {

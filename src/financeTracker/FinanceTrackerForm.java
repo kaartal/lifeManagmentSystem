@@ -1,5 +1,6 @@
 package financeTracker;
 
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
@@ -8,59 +9,65 @@ import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Map;
+import mainPanel.MainPanel;
 
+import lifemanagmentsystem.SessionManager;
 
 public class FinanceTrackerForm {
-
 
     private JPanel mainPanel;
     private JTextField amountField, descriptionField;
     private JComboBox<String> typeDropdownMenu, categoryCombo;
-    private JButton addTransactionButton, updateButton, deleteButton, deleteAllTransactionButton, exportButton;
+    private JButton addTransactionButton, updateButton, deleteButton,
+            deleteAllTransactionButton, exportButton, backButton;
     private JTable transactionTableSection;
-    private JLabel incomeLabel, expenseLabel, titleSection, labelInputDescription, labelInputMoney, balanceLabel;
+    private JLabel incomeLabel, expenseLabel, balanceLabel;
 
     private final TransactionManager manager;
+    private final String userEmail;
 
     public FinanceTrackerForm() {
-
         manager = new TransactionManager();
+        userEmail = SessionManager.getLoggedUserEmail();
+
+
+        Color themeColor = SessionManager.getThemeColor();
 
         mainPanel = new JPanel(new BorderLayout(15, 15));
-        mainPanel.setBorder(new
-                EmptyBorder(15, 15, 15, 15));
-        mainPanel.setBackground(Color.WHITE);
-
+        mainPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
+        mainPanel.setBackground(themeColor);
+        mainPanel.setSize(950, 720);
 
 
 
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
-        topPanel.setBackground(Color.WHITE);
+        topPanel.setBackground(themeColor);
 
 
-        topPanel.add(Box.createVerticalStrut(15));
+        backButton = createModernButton("← Nazad", new Color(127, 140, 141));
+        JPanel backPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        backPanel.setBackground(themeColor);
+        backPanel.add(backButton);
+        topPanel.add(backPanel);
 
         typeDropdownMenu = new JComboBox<>(new String[]{"Prihod", "Rashod"});
         topPanel.add(createNewDisplay("Vrsta transakcije:", typeDropdownMenu));
 
-
         amountField = new JTextField();
         topPanel.add(createNewDisplay("Iznos:", amountField));
-
 
         descriptionField = new JTextField();
         topPanel.add(createNewDisplay("Opis:", descriptionField));
 
-
-        categoryCombo = new JComboBox<>(new String[]{"Plata","Hrana","Racuni","Zabava","Prijevoz","Ostalo"});
+        categoryCombo = new JComboBox<>();
         topPanel.add(createNewDisplay("Kategorija:", categoryCombo));
 
-        topPanel.add(Box.createVerticalStrut(15));
-
+        typeDropdownMenu.addActionListener(e -> showHideCategoryByInput());
+        showHideCategoryByInput();
 
         JPanel buttonPanel = new JPanel(new GridLayout(1, 5, 10, 10));
-        buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.setBackground(themeColor);
 
         addTransactionButton = createModernButton("Dodaj", new Color(72, 201, 176));
         updateButton = createModernButton("Ažuriraj", new Color(52, 152, 219));
@@ -75,18 +82,18 @@ public class FinanceTrackerForm {
         buttonPanel.add(exportButton);
 
         topPanel.add(buttonPanel);
-        topPanel.add(Box.createVerticalStrut(15));
 
 
         transactionTableSection = new JTable();
-        transactionTableSection.setFillsViewportHeight(true);
         transactionTableSection.setRowHeight(28);
         transactionTableSection.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        transactionTableSection.setBackground(Color.WHITE);
+
         JScrollPane tableScroll = new JScrollPane(transactionTableSection);
 
 
         JPanel summaryPanel = new JPanel(new GridLayout(1, 3, 20, 10));
-        summaryPanel.setBackground(Color.WHITE);
+        summaryPanel.setBackground(themeColor);
 
         incomeLabel = createSummaryLabel("Prihod: 0.0", new Color(39, 174, 96));
         expenseLabel = createSummaryLabel("Rashod: 0.0", new Color(192, 57, 43));
@@ -96,302 +103,182 @@ public class FinanceTrackerForm {
         summaryPanel.add(expenseLabel);
         summaryPanel.add(balanceLabel);
 
+
         mainPanel.add(topPanel, BorderLayout.NORTH);
         mainPanel.add(tableScroll, BorderLayout.CENTER);
         mainPanel.add(summaryPanel, BorderLayout.SOUTH);
 
 
+        backButton.addActionListener(e -> goBackToMainMenu());
         addTransactionButton.addActionListener(e -> addNewTransaction());
         updateButton.addActionListener(e -> updateSelectedTransaction());
         deleteButton.addActionListener(e -> deleteSelectedTransactions());
         deleteAllTransactionButton.addActionListener(e -> deleteAllTransactions());
         exportButton.addActionListener(e -> exportData());
 
-        transactionTableSection.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) loadSelectedTransactionIntoFields();
-        });
+        transactionTableSection.getSelectionModel()
+                .addListSelectionListener(e -> loadSelectedTransactionIntoFields());
 
         loadDataIntoTable();
         updateSummary();
     }
 
+
+
+    private void goBackToMainMenu() {
+        JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(mainPanel);
+        frame.setContentPane(new MainPanel(userEmail));
+        frame.revalidate();
+        frame.repaint();
+    }
+
     private JPanel createNewDisplay(String labelText, JComponent field) {
-        JPanel rowData = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 6));
-        rowData.setBackground(Color.WHITE);
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 6));
+        panel.setOpaque(false);
 
         JLabel label = new JLabel(labelText);
         label.setPreferredSize(new Dimension(130, 28));
         label.setFont(new Font("Segoe UI", Font.PLAIN, 15));
-        label.setForeground(new Color(44, 62, 80));
-        rowData.add(label);
+        panel.add(label);
 
         field.setPreferredSize(new Dimension(200, 28));
-        if(field instanceof JTextField) {
-            field.setBorder(BorderFactory.createLineBorder(new Color(189, 195, 199), 1, true));
-        } else if(field instanceof JComboBox) {
-            field.setBackground(Color.WHITE);
-            field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        panel.add(field);
+
+        return panel;
+    }
+
+    private void showHideCategoryByInput() {
+        categoryCombo.removeAllItems();
+        if ("Prihod".equals(typeDropdownMenu.getSelectedItem())) {
+            categoryCombo.addItem("Plata");
+            categoryCombo.addItem("Ostalo");
+        } else {
+            categoryCombo.addItem("Hrana");
+            categoryCombo.addItem("Racuni");
+            categoryCombo.addItem("Zabava");
+            categoryCombo.addItem("Prijevoz");
+            categoryCombo.addItem("Ostalo");
         }
-
-        rowData.add(field);
-        return rowData;
     }
 
-    private JButton createModernButton(String text, Color bgColor) {
-        JButton buttonDisplay = new JButton(text);
-        buttonDisplay.setFocusPainted(false);
-        buttonDisplay.setBackground(bgColor);
-        buttonDisplay.setForeground(Color.WHITE);
-        buttonDisplay.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        buttonDisplay.setBorder(BorderFactory.createEmptyBorder(8,12,8,12));
-        buttonDisplay.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
-
-        buttonDisplay.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                buttonDisplay.setBackground(bgColor.darker());
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                buttonDisplay.setBackground(bgColor);
-            }
-        });
-        return buttonDisplay;
+    private JButton createModernButton(String text, Color bg) {
+        JButton b = new JButton(text);
+        b.setBackground(bg);
+        b.setForeground(Color.WHITE);
+        b.setFocusPainted(false);
+        b.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        return b;
     }
 
-
-    private JLabel createSummaryLabel(String text, Color color) {
-        JLabel labelDisplay = new JLabel(text);
-        labelDisplay.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        labelDisplay.setForeground(color);
-        return labelDisplay;
+    private JLabel createSummaryLabel(String text, Color c) {
+        JLabel l = new JLabel(text);
+        l.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        l.setForeground(c);
+        return l;
     }
 
-public JPanel getMainPanel() {
+    public JPanel getMainPanel() {
         return mainPanel;
     }
 
-        // CHECKING IS THERE SOME TRANSACTION IN PANEL
-        private boolean checkIsThereTransaction() {
-            if (manager.getAllTransactions().isEmpty()) {
-                JOptionPane.showMessageDialog(
-                        null,
-                        "Trenutno nema transakcija u bazi podataka.",
-                        "Greška",
-                        JOptionPane.ERROR_MESSAGE
-                );
-                return false;
-            }
-            return true;
-        }
 
-        // ADD NEW TRANSACTION TO DB, USER ENTER TYPE, AMOUNT, DESCRIBE, CATEGORY. ID INCREMENT FOR NEW TRANSACTION
-        private void addNewTransaction() {
-            try {
-                String type = (String) typeDropdownMenu.getSelectedItem();
-                double amount = Double.parseDouble(amountField.getText());
-                String description = descriptionField.getText();
-                String category = (String) categoryCombo.getSelectedItem();
-
-                if (description.length() < 3) {
-                    JOptionPane.showMessageDialog(null, "Opis mora imati minimalno 3 karaktera!");
-                    return;
-                }
-
-                if (description.length() > 40) {
-                    JOptionPane.showMessageDialog(null, "Opis transakcije se treba smanjiti!");
-                    return;
-                }
-
-                manager.addNewTransaction(new Transaction(type, amount, description, category));
-
-                loadDataIntoTable();
-                updateSummary();
-
-                amountField.setText("");
-                descriptionField.setText("");
-
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(null, "Greška: niste unijeli tražene podatke.");
-            }
-        }
-
-
-
-        // UPDATE SELECTED TRANSACTION, USER CAN ENTER NEW VALUES TYPE, AMOUNT, DESCRIBE, CATEGORY, ID SAME
-        private void updateSelectedTransaction() {
-            int row = transactionTableSection.getSelectedRow();
-            if (row == -1) return;
-
-            String id = manager.getAllTransactions().get(row).getId();
-            String type = (String) typeDropdownMenu.getSelectedItem();
-            double amount = Double.parseDouble(amountField.getText());
-            String desc = descriptionField.getText();
-            String category = (String) categoryCombo.getSelectedItem();
-
-            manager.updateSelectedTransaction(new Transaction(id, type, amount, desc, category));
-
+    private void addNewTransaction() {
+        try {
+            manager.addNewTransaction(new Transaction(
+                    userEmail,
+                    typeDropdownMenu.getSelectedItem().toString(),
+                    Double.parseDouble(amountField.getText()),
+                    descriptionField.getText(),
+                    categoryCombo.getSelectedItem().toString()
+            ));
             loadDataIntoTable();
             updateSummary();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Greška pri unosu!");
         }
-
-        //    DELETE SELECTED TRANSACTIONS FROM PANEL
-        private void deleteSelectedTransactions() {
-            int rowCount = transactionTableSection.getRowCount();
-            boolean anyChecked = false;
-
-            for (int i = 0; i < rowCount; i++) {
-                Boolean checked = (Boolean) transactionTableSection.getValueAt(i, 0);
-                if (checked != null && checked) {
-                    anyChecked = true;
-                    break;
-                }
-            }
-
-            if (!anyChecked) {
-                JOptionPane.showMessageDialog(null,
-                        "Niste označili nijednu transakciju!",
-                        "Greška",
-                        JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            ArrayList<Transaction> all = manager.getAllTransactions();
-
-            int choose = JOptionPane.showConfirmDialog(
-                    null,
-                    "Jeste li sigurni da želite izbrisati odabrane transakcije?",
-                    "Potvrda brisanja",
-                    JOptionPane.YES_NO_OPTION
-            );
-
-            if (choose == JOptionPane.YES_OPTION) {
-                for (int i = rowCount - 1; i >= 0; i--) {
-                    Boolean checked = (Boolean) transactionTableSection.getValueAt(i, 0);
-                    if (checked) {
-                        String id = all.get(i).getId();
-                        manager.deleteMarkedTransaction(id);
-                    }
-                }
-
-                loadDataIntoTable();
-                updateSummary();
-
-                JOptionPane.showMessageDialog(null,
-                        "Odabrane transakcije su uspješno obrisane!");
-            }
-        }
-
-        // DELETE ALL TRANSACTION FROM DB
-        private void deleteAllTransactions() {
-            if(checkIsThereTransaction())
-                if (JOptionPane.showConfirmDialog(null,
-                        "Izbrisati sve?", "Potvrda",
-                        JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION)
-                {
-                    manager.deleteAllTransactions();
-                    loadDataIntoTable();
-                    updateSummary();
-                }
-        }
-
-        private void exportData() {
-            if (manager.getAllTransactions().isEmpty()) {
-                JOptionPane.showMessageDialog(
-                        null,
-                        "Trenutno nema nijedne transakcije za eksportovati.",
-                        "Greška",
-                        JOptionPane.ERROR_MESSAGE
-                );
-                return;
-            }
-
-            JFileChooser chooser = new JFileChooser();
-            chooser.setDialogTitle("Sačuvaj kao TXT ili CSV");
-
-            if (chooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
-                try {
-                    String fileExstension = chooser.getSelectedFile().getAbsolutePath();
-                    if (!fileExstension.endsWith(".txt") && !fileExstension.endsWith(".csv"))
-                        fileExstension += ".txt";
-
-                    PrintWriter writerTransaction = new PrintWriter(new FileWriter(fileExstension));
-
-                    double income = manager.getTotalIncome();
-                    double expense = manager.getTotalExpense();
-                    double balance = income - expense;
-
-                    writerTransaction.println("Ukupni prihod: " + income);
-                    writerTransaction.println("Ukupni rashod: " + expense);
-                    writerTransaction.println("Stanje racuna: " + balance);
-                    writerTransaction.println("\n-----------------------------------");
-
-                    // INCOME EXPORT BY CATEGORIES
-                    writerTransaction.println("Prihodi po kategorijama:");
-                    for (Map.Entry<String, Double> export : manager.getIncomesByCategory().entrySet()) {
-                        writerTransaction.println(export.getKey() + ": " + export.getValue());
-                    }
-                    //EXPENSES EXPORT BY CATEGORIES
-                    writerTransaction.println("\n-----------------------------------");
-                    writerTransaction.println("Rashodi po kategorijama:");
-                    for (Map.Entry<String, Double> export : manager.getExpenseByCategory().entrySet()) {
-                        writerTransaction.println(export.getKey() + ": " + export.getValue());
-                    }
-
-                    writerTransaction.close();
-
-                    JOptionPane.showMessageDialog(null, "Podaci su uspješno eksportovani!");
-
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(null, "Greška pri eksportu: " + ex.getMessage());
-                }
-            }
-        }
-
-        // LOAD ALL TRANSACTIONS FROM DB TO USING PANEL
-        private void loadDataIntoTable() {
-            ArrayList<Transaction> list = manager.getAllTransactions();
-
-            DefaultTableModel model = new DefaultTableModel() {
-                public boolean isCellEditable(int row, int col) { return col == 0; }
-                public Class<?> getColumnClass(int col) { return col == 0 ? Boolean.class : String.class; }
-            };
-
-            model.addColumn("");
-            model.addColumn("Vrsta");
-            model.addColumn("Iznos");
-            model.addColumn("Opis");
-            model.addColumn("Kategorija");
-
-            for (Transaction t : list) {
-                model.addRow(new Object[]{false, t.getType(), t.getAmount(), t.getDescription(), t.getCategory()});
-            }
-
-            transactionTableSection.setModel(model);
-            transactionTableSection.getColumnModel().getColumn(0).setMinWidth(35);
-            transactionTableSection.getColumnModel().getColumn(0).setMaxWidth(35);
-            transactionTableSection.getColumnModel().getColumn(0).setPreferredWidth(35);
-        }
-
-        private void loadSelectedTransactionIntoFields() {
-            int row = transactionTableSection.getSelectedRow();
-            if (row == -1) return;
-
-            typeDropdownMenu.setSelectedItem(transactionTableSection.getValueAt(row, 1).toString());
-            amountField.setText(transactionTableSection.getValueAt(row, 2).toString());
-            descriptionField.setText(transactionTableSection.getValueAt(row, 3).toString());
-            categoryCombo.setSelectedItem(transactionTableSection.getValueAt(row, 4).toString());
-        }
-
-        private void updateSummary() {
-            double income = manager.getTotalIncome();
-            double expense = manager.getTotalExpense();
-            double balance = income - expense;
-
-            incomeLabel.setText("Prihod: " + income);
-            expenseLabel.setText("Rashod: " + expense);
-            balanceLabel.setText("Saldo: " + balance);
-        }
-
-
-
     }
+
+    private void updateSelectedTransaction() {
+        int row = transactionTableSection.getSelectedRow();
+        if (row == -1) return;
+
+        ArrayList<Transaction> list = manager.getUserTransactions(userEmail);
+        manager.updateSelectedTransaction(new Transaction(
+                list.get(row).getId(),
+                userEmail,
+                typeDropdownMenu.getSelectedItem().toString(),
+                Double.parseDouble(amountField.getText()),
+                descriptionField.getText(),
+                categoryCombo.getSelectedItem().toString()
+        ));
+
+        loadDataIntoTable();
+        updateSummary();
+    }
+
+    private void deleteSelectedTransactions() {
+        ArrayList<Transaction> list = manager.getUserTransactions(userEmail);
+        for (int i = transactionTableSection.getRowCount() - 1; i >= 0; i--) {
+            Boolean checked = (Boolean) transactionTableSection.getValueAt(i, 0);
+            if (checked != null && checked) {
+                manager.deleteMarkedTransaction(list.get(i).getId(), userEmail);
+            }
+        }
+        loadDataIntoTable();
+        updateSummary();
+    }
+
+    private void deleteAllTransactions() {
+        manager.deleteAllTransactions(userEmail);
+        loadDataIntoTable();
+        updateSummary();
+    }
+
+    private void exportData() {
+        try {
+            PrintWriter pw = new PrintWriter(new FileWriter("finance_export.txt"));
+            pw.println("Saldo: " + (manager.getTotalIncome(userEmail) - manager.getTotalExpense(userEmail)));
+            pw.close();
+            JOptionPane.showMessageDialog(null, "Eksport uspješan!");
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Greška pri eksportu!");
+        }
+    }
+
+    private void loadDataIntoTable() {
+        DefaultTableModel model = new DefaultTableModel() {
+            public boolean isCellEditable(int r, int c) { return c == 0; }
+            public Class<?> getColumnClass(int c) { return c == 0 ? Boolean.class : String.class; }
+        };
+
+        model.addColumn("");
+        model.addColumn("Vrsta");
+        model.addColumn("Iznos");
+        model.addColumn("Opis");
+        model.addColumn("Kategorija");
+
+        for (Transaction t : manager.getUserTransactions(userEmail)) {
+            model.addRow(new Object[]{false, t.getType(), t.getAmount(), t.getDescription(), t.getCategory()});
+        }
+
+        transactionTableSection.setModel(model);
+    }
+
+    private void loadSelectedTransactionIntoFields() {
+        int row = transactionTableSection.getSelectedRow();
+        if (row == -1) return;
+
+        typeDropdownMenu.setSelectedItem(transactionTableSection.getValueAt(row, 1));
+        amountField.setText(transactionTableSection.getValueAt(row, 2).toString());
+        descriptionField.setText(transactionTableSection.getValueAt(row, 3).toString());
+        categoryCombo.setSelectedItem(transactionTableSection.getValueAt(row, 4));
+    }
+
+    private void updateSummary() {
+        double income = manager.getTotalIncome(userEmail);
+        double expense = manager.getTotalExpense(userEmail);
+        balanceLabel.setText("Saldo: " + (income - expense));
+        incomeLabel.setText("Prihod: " + income);
+        expenseLabel.setText("Rashod: " + expense);
+    }
+}

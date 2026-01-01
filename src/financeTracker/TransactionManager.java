@@ -5,8 +5,6 @@ import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import org.bson.types.ObjectId;
-import com.mongodb.client.MongoCollection;
-import org.bson.Document;
 
 import java.util.*;
 
@@ -15,100 +13,90 @@ public class TransactionManager {
     private final MongoCollection<Document> collection;
 
     public TransactionManager() {
-        // koristimo tvoju MongodbConnection klasu
         MongoDatabase db = lifemanagmentsystem.MongodbConnection.getDatabase();
-        collection = db.getCollection("transactions");
+        collection = db.getCollection("transactionsTracker");
     }
+
 
     public void addNewTransaction(Transaction t) {
-        collection.insertOne(t.toDocument());
+        collection.insertOne(t.toDocument().append("userEmail", t.getUserEmail()));
     }
 
-    public ArrayList<Transaction> getAllTransactions() {
+
+    public ArrayList<Transaction> getUserTransactions(String email) {
         ArrayList<Transaction> list = new ArrayList<>();
-        MongoCursor<Document> cursor = collection.find().iterator();
+        MongoCursor<Document> cursor = collection.find(new Document("userEmail", email)).iterator();
 
         while (cursor.hasNext()) {
-            Document docTemplate = cursor.next();
+            Document doc = cursor.next();
             list.add(new Transaction(
-                    docTemplate.getObjectId("_id").toHexString(),
-                    docTemplate.getString("Vrsta"),
-                    docTemplate.getDouble("Iznos"),
-                    docTemplate.getString("Opis"),
-                    docTemplate.getString("Kategorija")
+                    doc.getObjectId("_id").toHexString(),
+                    doc.getString("userEmail"),
+                    doc.getString("Vrsta"),
+                    doc.getDouble("Iznos"),
+                    doc.getString("Opis"),
+                    doc.getString("Kategorija")
             ));
         }
         return list;
     }
 
-    // RETURN SUM OF ALL INCOME TRANSACTIONS
-    public double getTotalIncome() {
+    public double getTotalIncome(String email) {
         double totalAmount = 0;
-        for (Transaction t : getAllTransactions()) {
+        for (Transaction t : getUserTransactions(email)) {
             if (t.getType().equalsIgnoreCase("Prihod")) {
-                totalAmount += t.getAmount();} // SUM ALL INCOME FROM DB
+                totalAmount += t.getAmount();
+            }
         }
-
-
         return totalAmount;
     }
 
-    // RETURN SUM OF ALL EXPENSE TRANSACTION
-    public double getTotalExpense() {
+    public double getTotalExpense(String email) {
         double total = 0;
-
-        for (Transaction t : getAllTransactions()) {
+        for (Transaction t : getUserTransactions(email)) {
             if (t.getType().equalsIgnoreCase("Rashod")) {
-                total += t.getAmount();} // SUM ALL EXPENSE FROM DB
+                total += t.getAmount();
+            }
         }
         return total;
     }
 
-    // EXPENSE LIST FOR EXPORT BY CATEGORIES
-    public Map<String, Double> getExpenseByCategory() {
 
-        String[] categories = {"Plata", "Hrana", "Racuni", "Zabava", "Prijevoz", "Ostalo"};
-        Map<String, Double> result = new LinkedHashMap<>();
-
-        for (String cat : categories) result.put(cat, 0.0);
-
-        for (Transaction t : getAllTransactions()) {
-            if ("Rashod".equalsIgnoreCase(t.getType())) {
-
-                String cat = t.getCategory();
-                if (cat == null || !result.containsKey(cat))
-                    cat = "Ostalo";
-
-                result.put(cat, result.get(cat) + t.getAmount());
-            }
-        }
-        return result;
-    }
-
-    // INCOME LIST FOR EXPORT BY CATEGORIES
-    public Map<String, Double> getIncomesByCategory() {
-
+    public Map<String, Double> getIncomesByCategory(String email) {
         Map<String, Double> result = new LinkedHashMap<>();
         String[] categories = {"Plata", "Hrana", "Racuni", "Zabava", "Prijevoz", "Ostalo"};
-
         for (String cat : categories) result.put(cat, 0.0);
-        for (Transaction t : getAllTransactions()) {
+
+        for (Transaction t : getUserTransactions(email)) {
             if ("Prihod".equalsIgnoreCase(t.getType())) {
-
                 String cat = t.getCategory();
-                if (cat == null || !result.containsKey(cat))
-                    cat = "Ostalo";
-
+                if (cat == null || !result.containsKey(cat)) cat = "Ostalo";
                 result.put(cat, result.get(cat) + t.getAmount());
             }
         }
-
         return result;
     }
 
-    // UPDATE TRANSACTION, USER CAN INPUT NEW TYPE, AMOUNT, DESCRIPTION AND CATEGORY. ID SAME.
+
+    public Map<String, Double> getExpenseByCategory(String email) {
+        Map<String, Double> result = new LinkedHashMap<>();
+        String[] categories = {"Plata", "Hrana", "Racuni", "Zabava", "Prijevoz", "Ostalo"};
+        for (String cat : categories) result.put(cat, 0.0);
+
+        for (Transaction t : getUserTransactions(email)) {
+            if ("Rashod".equalsIgnoreCase(t.getType())) {
+                String cat = t.getCategory();
+                if (cat == null || !result.containsKey(cat)) cat = "Ostalo";
+                result.put(cat, result.get(cat) + t.getAmount());
+            }
+        }
+        return result;
+    }
+
+
     public void updateSelectedTransaction(Transaction t) {
-        Document filter = new Document("_id", new ObjectId(t.getId()));
+        Document filter = new Document("_id", new ObjectId(t.getId()))
+                .append("userEmail", t.getUserEmail());
 
         Document updated = new Document("$set", new Document()
                 .append("Vrsta", t.getType())
@@ -120,13 +108,14 @@ public class TransactionManager {
         collection.updateOne(filter, updated);
     }
 
-    // DELETE ALL MARKED TRANSACTION FROM PANEL
-    public void deleteMarkedTransaction(String id) {
-        collection.deleteOne(new Document("_id", new ObjectId(id)));
+
+    public void deleteMarkedTransaction(String id, String email) {
+        collection.deleteOne(new Document("_id", new ObjectId(id))
+                .append("userEmail", email));
     }
 
-    // DELETE ALL TRANSACTION FROM PANEL
-    public void deleteAllTransactions() {
-        collection.deleteMany(new Document());
+
+    public void deleteAllTransactions(String email) {
+        collection.deleteMany(new Document("userEmail", email));
     }
 }

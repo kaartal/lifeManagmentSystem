@@ -2,10 +2,17 @@ package mainPanel;
 
 import accountDetails.AccountDetailsFrame;
 import financeTracker.FinanceTrackerForm;
+import fitnesTracker.FitnessPlanner;
+import habitTracker.HabitRecord;
+import habitTracker.HabitTracker;
 import lifemanagmentsystem.SessionManager;
 import lifemanagmentsystem.UserService;
 //import lifemanagmentsystem.UserTheme;
 import loginUser.LoginUser;
+import sleepTracker.SleepTracker;
+import studyPlanner.StudyPlanner;
+import studyPlanner.StudyRecord;
+import studyPlanner.StudyPlanner;
 
 
 import javax.swing.*;
@@ -26,7 +33,7 @@ public class MainPanel extends JPanel {
         UserService userService = new UserService();
         String theme = userService.getUserTheme(currentUserEmail);
         SessionManager userTheme = new SessionManager();
-        setSize(950,720);
+        setSize(1250,720);
         setBackground(SessionManager.getColorFromTheme(theme));
         setLayout(new BorderLayout());
 
@@ -85,8 +92,8 @@ public class MainPanel extends JPanel {
         //logoutButton = new JButton("Odjavi se");
     //}
 
-    private void showFeatureInProgress(int featureIndex) {
-        String[] featureNames = {
+    private void showFeatureInProgress(int sectionPosition) {
+        String[] sectionNames = {
                 "Account Details",
                 "Finance Tracker",
                 "Task Planner",
@@ -95,7 +102,7 @@ public class MainPanel extends JPanel {
                 "Fitness Planner"
         };
 
-        if (featureIndex == 0) {
+        if (sectionPosition == 0) {
             AccountDetailsFrame frame = new AccountDetailsFrame(currentUserEmail);
             frame.setVisible(true);
             Window mainWindow = SwingUtilities.getWindowAncestor(this);
@@ -104,6 +111,87 @@ public class MainPanel extends JPanel {
             frame.setLocation(mainWindow.getLocation());
             return;
         }
+
+        if (sectionPosition == 1) {
+            FinanceTrackerForm financeTrackerForm = new FinanceTrackerForm();
+
+            JFrame frame = new JFrame("Finance Tracker");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setContentPane(financeTrackerForm.getMainPanel());
+
+            Window mainWindow = SwingUtilities.getWindowAncestor(this);
+            frame.setSize(mainWindow.getSize());
+            frame.setLocation(mainWindow.getLocation());
+
+            mainWindow.setVisible(false);
+            frame.setVisible(true);
+            return;
+        }
+
+        if (sectionPosition == 2) {
+            SleepTracker sleepTrackerForm = new SleepTracker();
+
+            JFrame frame = new JFrame("Sleep Tracker");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setContentPane(sleepTrackerForm.getMainPanel());
+
+            Window mainWindow = SwingUtilities.getWindowAncestor(this);
+            frame.setSize(mainWindow.getSize());
+            frame.setLocation(mainWindow.getLocation());
+
+            mainWindow.setVisible(false);
+            frame.setVisible(true);
+            return;
+        }
+
+        if (sectionPosition == 3) {
+            StudyPlanner sleepTrackerForm = new StudyPlanner();
+
+            JFrame frame = new JFrame("Sleep Tracker");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setContentPane(sleepTrackerForm.getMainPanel());
+
+            Window mainWindow = SwingUtilities.getWindowAncestor(this);
+            frame.setSize(mainWindow.getSize());
+            frame.setLocation(mainWindow.getLocation());
+
+            mainWindow.setVisible(false);
+            frame.setVisible(true);
+            return;
+        }
+
+        if (sectionPosition == 4) {
+            FitnessPlanner sleepTrackerForm = new FitnessPlanner();
+
+            JFrame frame = new JFrame("Sleep Tracker");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setContentPane(sleepTrackerForm.getMainPanel());
+
+            Window mainWindow = SwingUtilities.getWindowAncestor(this);
+            frame.setSize(mainWindow.getSize());
+            frame.setLocation(mainWindow.getLocation());
+
+            mainWindow.setVisible(false);
+            frame.setVisible(true);
+            return;
+        }
+
+        if (sectionPosition == 5) {
+            HabitTracker sleepTrackerForm = new HabitTracker(currentUserEmail);
+
+            JFrame frame = new JFrame("Sleep Tracker");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setContentPane(sleepTrackerForm.getMainPanel());
+
+            Window mainWindow = SwingUtilities.getWindowAncestor(this);
+            frame.setSize(mainWindow.getSize());
+            frame.setLocation(mainWindow.getLocation());
+
+            mainWindow.setVisible(false);
+            frame.setVisible(true);
+            return;
+        }
+
 
         //if (featureIndex == 1) {
           //  FinanceTrackerForm frame = new FinanceTrackerForm(currentUserEmail);
@@ -119,7 +207,7 @@ public class MainPanel extends JPanel {
                 "<html><div style='text-align: center;'><h3>%s</h3>"
                         + "<p style='margin: 10px 0;'>Ova funkcionalnost je trenutno u izradi.</p>"
                         + "<p>Vraćamo se uskoro sa punom verzijom!</p></div></html>",
-                featureNames[featureIndex]
+                sectionNames[sectionPosition]
         );
 
         JLabel messageLabel = new JLabel(message);
