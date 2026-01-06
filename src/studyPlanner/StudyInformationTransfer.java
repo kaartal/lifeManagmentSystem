@@ -5,8 +5,8 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.FindIterable;
 import lifemanagmentsystem.MongodbConnection;
 import org.bson.Document;
-
 import java.util.ArrayList;
+import java.util.Map;
 
 public class StudyInformationTransfer {
 
@@ -14,47 +14,37 @@ public class StudyInformationTransfer {
 
     public StudyInformationTransfer() {
         MongoDatabase db = MongodbConnection.getDatabase();
-        collection = db.getCollection("studyTracker");
+        collection = db.getCollection("schoolTracker");
     }
 
-
-    public void addStudyRecord(StudyRecord record) {
-        Document doc = new Document("userEmail", record.getUserEmail())
-                .append("subject", record.getSubject())
-                .append("hours", record.getHours())
-                .append("date", record.getDate());
-        collection.insertOne(doc);
-    }
-
-
-    public ArrayList<StudyRecord> getAllRecords(String userEmail) {
-        ArrayList<StudyRecord> records = new ArrayList<>();
-        FindIterable<Document> docs = collection.find(new Document("userEmail", userEmail));
-
-        for (Document doc : docs) {
-            StudyRecord r = new StudyRecord(
-                    doc.getString("userEmail"),
-                    doc.getString("subject"),
-                    doc.getDouble("hours"),
-                    doc.getString("date")
-            );
-            records.add(r);
+    // Dodavanje ili update studenta
+    public void addOrUpdateRecord(StudyRecord record) {
+        Document doc = new Document("studentEmail", record.getStudentEmail());
+        for (Map.Entry<String, ArrayList<Integer>> entry : record.getGrades().entrySet()) {
+            doc.append(entry.getKey(), entry.getValue()); // spremamo cijelu listu ocjena
         }
-        return records;
+        collection.replaceOne(
+                new Document("studentEmail", record.getStudentEmail()),
+                doc,
+                new com.mongodb.client.model.ReplaceOptions().upsert(true)
+        );
     }
 
+    public StudyRecord getRecord(String studentEmail) {
+        FindIterable<Document> docs = collection.find(new Document("studentEmail", studentEmail));
+        Document doc = docs.first();
+        StudyRecord record = new StudyRecord(studentEmail);
 
-    public ArrayList<Document> getStudySummary(String userEmail) {
-        ArrayList<Document> summary = new ArrayList<>();
-        for (Document doc : collection.aggregate(
-                java.util.Arrays.asList(
-                        new Document("$match", new Document("userEmail", userEmail)),
-                        new Document("$group", new Document("_id", "$subject")
-                                .append("totalHours", new Document("$sum", "$hours")))
-                )
-        )) {
-            summary.add(doc);
+        if (doc != null) {
+            for (String subject : record.getGrades().keySet()) {
+                // Dohvati listu ocjena iz MongoDB-a
+                @SuppressWarnings("unchecked")
+                ArrayList<Integer> gradesFromDB = (ArrayList<Integer>) doc.get(subject);
+                if (gradesFromDB != null) {
+                    record.getGrades().put(subject, gradesFromDB); // postavi listu ocjena
+                }
+            }
         }
-        return summary;
+        return record;
     }
 }

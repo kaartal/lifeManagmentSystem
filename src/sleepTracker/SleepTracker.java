@@ -1,28 +1,45 @@
 package sleepTracker;
 
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import lifemanagmentsystem.MongodbConnection;
 import mainPanel.MainPanel;
+import org.bson.Document;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.util.ArrayList;
+import java.io.FileOutputStream;
+import java.time.LocalDate;
+import java.time.LocalTime;
+
+
+
+
+
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
 
 public class SleepTracker {
 
     private JPanel mainPanel;
-    private JTextField sleepHoursField;
-    private JButton addSleepButton, backButton;
-    private JTextArea sleepRecordsArea;
+    private JTextField dateField, startField, endField;
+    private JButton addButton, backButton, exportButton;
+    private JTable sleepTable;
+    private DefaultTableModel tableModel;
 
-    private SleepInformationTransfer dbManager;
     private String userEmail;
+    private final MongoCollection<Document> collection;
 
-    public SleepTracker() {
-        userEmail = "test@example.com";
-        dbManager = new SleepInformationTransfer();
+    public SleepTracker(String loggedUserEmail) {
+        userEmail = loggedUserEmail;
+        collection = MongodbConnection.getDatabase().getCollection("sleepTracker");
 
         mainPanel = new JPanel(new BorderLayout(10,10));
+        mainPanel.setBorder(new EmptyBorder(10,10,10,10));
         mainPanel.setBackground(Color.WHITE);
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
 
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
@@ -34,98 +51,131 @@ public class SleepTracker {
         backPanel.add(backButton);
         topPanel.add(backPanel);
 
-        JPanel inputPanel = new JPanel();
-        inputPanel.setBackground(Color.WHITE);
+        JPanel inputPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        inputPanel.setBackground(new Color(236, 240, 241));
 
-        sleepHoursField = new JTextField(10);
-        addSleepButton = new JButton("Dodaj san");
+        dateField = new JTextField(8);
+        dateField.setText(LocalDate.now().toString());
+        startField = new JTextField(5);
+        startField.setText("22:00");
+        endField = new JTextField(5);
+        endField.setText("06:00");
 
-        inputPanel.add(new JLabel("Sati sna:"));
-        inputPanel.add(sleepHoursField);
-        inputPanel.add(addSleepButton);
+        addButton = createModernButton("Dodaj san", new Color(72,201,176));
+        exportButton = createModernButton("Export PDF", new Color(155,89,182));
 
-        sleepRecordsArea = new JTextArea(15, 30);
-        sleepRecordsArea.setEditable(false);
-        JScrollPane scrollPane = new JScrollPane(sleepRecordsArea);
+        inputPanel.add(new JLabel("Datum (YYYY-MM-DD):"));
+        inputPanel.add(dateField);
+        inputPanel.add(new JLabel("Početak (HH:mm):"));
+        inputPanel.add(startField);
+        inputPanel.add(new JLabel("Kraj (HH:mm):"));
+        inputPanel.add(endField);
+        inputPanel.add(addButton);
+        inputPanel.add(exportButton);
 
-        mainPanel.add(inputPanel, BorderLayout.NORTH);
+        topPanel.add(inputPanel);
+
+        tableModel = new DefaultTableModel(new String[]{"Datum","Početak","Kraj","Trajanje (sati)"},0);
+        sleepTable = new JTable(tableModel);
+        sleepTable.setRowHeight(25);
+        JScrollPane scrollPane = new JScrollPane(sleepTable);
+
+        mainPanel.add(topPanel, BorderLayout.NORTH);
         mainPanel.add(scrollPane, BorderLayout.CENTER);
 
-        addSleepButton.addActionListener(e -> addSleepRecord());
+        addButton.addActionListener(e -> addSleepRecord());
+        exportButton.addActionListener(e -> exportPDF());
+        backButton.addActionListener(e -> goBack());
 
-        updateSleepRecordsDisplay();
+        loadData();
     }
 
     private void addSleepRecord() {
         try {
-            double hours = Double.parseDouble(sleepHoursField.getText());
-            if (hours <= 0 || hours > 24) {
-                JOptionPane.showMessageDialog(null, "Unesite validan broj sati (0-24)!");
-                return;
+            LocalDate date = LocalDate.parse(dateField.getText());
+            LocalTime start = LocalTime.parse(startField.getText());
+            LocalTime end = LocalTime.parse(endField.getText());
+
+            // Trajanje u satima i minutama
+            long minutes = java.time.Duration.between(start, end).toMinutes();
+            if (minutes < 0) minutes += 24 * 60;
+            long hoursPart = minutes / 60;
+            long minutesPart = minutes % 60;
+            String duration = String.format("%02d:%02d", hoursPart, minutesPart);
+
+            Document doc = new Document("userEmail", userEmail)
+                    .append("date", date.toString())
+                    .append("start", start.toString())
+                    .append("end", end.toString())
+                    .append("duration", duration);
+            collection.insertOne(doc);
+
+            tableModel.addRow(new Object[]{date, start, end, duration});
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(null, "Greška pri unosu. Provjerite format datuma i vremena!");
+        }
+    }
+
+    private void loadData() {
+        tableModel.setRowCount(0);
+        for (Document doc : collection.find(new Document("userEmail", userEmail))) {
+            tableModel.addRow(new Object[]{
+                    doc.getString("date"),
+                    doc.getString("start"),
+                    doc.getString("end"),
+                    doc.getString("duration") // sad uzima format sat:min
+            });
+        }
+    }
+
+
+    private void exportPDF() {
+        try {
+            com.itextpdf.text.Document pdfDoc = new com.itextpdf.text.Document();
+            PdfWriter.getInstance(pdfDoc, new FileOutputStream("sleep_records.pdf"));
+            pdfDoc.open();
+
+            pdfDoc.add(new Paragraph("Sleep Tracker - " + userEmail,
+                    new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 16, com.itextpdf.text.Font.BOLD)));
+
+            PdfPTable pdfTable = new PdfPTable(4);
+            pdfTable.addCell("Datum");
+            pdfTable.addCell("Početak");
+            pdfTable.addCell("Kraj");
+            pdfTable.addCell("Trajanje (sati)");
+
+            for (int i = 0; i < tableModel.getRowCount(); i++) {
+                for (int j = 0; j < 4; j++) {
+                    pdfTable.addCell(tableModel.getValueAt(i,j).toString());
+                }
             }
 
-            String date = java.time.LocalDate.now().toString();
-            SleepRecord record = new SleepRecord(userEmail, hours, date);
+            pdfDoc.add(pdfTable);
+            pdfDoc.close();
 
-            dbManager.addSleepRecord(record);
-            sleepHoursField.setText("");
-            updateSleepRecordsDisplay();
-
+            JOptionPane.showMessageDialog(null, "PDF eksport uspješan!");
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(null, "Greška: " + ex.getMessage());
+            JOptionPane.showMessageDialog(null, "Greška pri eksportu PDF-a: " + ex.getMessage());
         }
     }
 
-    private void updateSleepRecordsDisplay() {
-        ArrayList<SleepRecord> records = dbManager.getAllRecords(userEmail);
-        StringBuilder sb = new StringBuilder();
-        double total = 0;
-
-        for (int i = 0; i < records.size(); i++) {
-            SleepRecord r = records.get(i);
-            sb.append("Dan ").append(i + 1)
-                    .append(" (").append(r.getDate()).append("): ")
-                    .append(r.getHours()).append(" sati\n");
-            total += r.getHours();
-        }
-
-        if (!records.isEmpty()) {
-            double avg = total / records.size();
-            sb.append("\nProsjek sati sna: ").append(String.format("%.2f", avg));
-        }
-
-        sleepRecordsArea.setText(sb.toString());
-    }
-
-    public JPanel getMainPanel() {
-        return mainPanel;
-    }
-
-
-    private void goBackToMainPanel() {
+    private void goBack() {
         JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(mainPanel);
         frame.setContentPane(new MainPanel(userEmail));
         frame.revalidate();
         frame.repaint();
     }
 
+    public JPanel getMainPanel() {
+        return mainPanel;
+    }
+
     private JButton createModernButton(String text, Color bg) {
         JButton b = new JButton(text);
         b.setBackground(bg);
         b.setForeground(Color.WHITE);
+        b.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 14));
         b.setFocusPainted(false);
-        b.setFont(new Font("Segoe UI", Font.BOLD, 14));
         return b;
-    }
-
-
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("Sleep Tracker");
-        SleepTracker tracker = new SleepTracker();
-        frame.setContentPane(tracker.getMainPanel());
-        frame.pack();
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
     }
 }

@@ -3,8 +3,8 @@ package fitnesTracker;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.FindIterable;
-import lifemanagmentsystem.MongodbConnection;
 import org.bson.Document;
+import lifemanagmentsystem.MongodbConnection;
 
 import java.util.ArrayList;
 
@@ -17,35 +17,41 @@ public class FitnessDBManager {
         collection = db.getCollection("fitnessTracker");
     }
 
-
     public void addFitnessRecord(FitnessRecord record) {
         Document doc = new Document("userEmail", record.getUserEmail())
+                .append("date", record.getDate())
                 .append("calories", record.getCalories())
-                .append("date", record.getDate());
+                .append("duration", record.getDurationMinutes())
+                .append("distance", record.getDistanceKilometers())
+                .append("intensity", record.getIntensityLevel());
         collection.insertOne(doc);
     }
 
+    public void deleteFitnessRecord(String userEmail, String date) {
+        collection.deleteOne(new Document("userEmail", userEmail).append("date", date));
+    }
 
     public ArrayList<FitnessRecord> getAllRecords(String userEmail) {
         ArrayList<FitnessRecord> records = new ArrayList<>();
         FindIterable<Document> docs = collection.find(new Document("userEmail", userEmail));
 
         for (Document doc : docs) {
-            FitnessRecord r = new FitnessRecord(
-                    doc.getString("userEmail"),
-                    doc.getDouble("calories"),
-                    doc.getString("date")
-            );
-            records.add(r);
-        }
-        return records;
-    }
+            String date = doc.getString("date");
+            double calories = doc.getDouble("calories") != null ? doc.getDouble("calories") : 0;
+            int duration = doc.getInteger("duration") != null ? doc.getInteger("duration") : 0;
+            double distance = doc.getDouble("distance") != null ? doc.getDouble("distance") : 0;
+            String intensity = doc.getString("intensity") != null ? doc.getString("intensity") : "Slab";
 
-    public double getAverageCalories(String userEmail) {
-        ArrayList<FitnessRecord> records = getAllRecords(userEmail);
-        if (records.isEmpty()) return 0;
-        double total = 0;
-        for (FitnessRecord r : records) total += r.getCalories();
-        return total / records.size();
+            records.add(new FitnessRecord(
+                    doc.getString("userEmail"),
+                    date,
+                    calories,
+                    duration,
+                    distance,
+                    intensity
+            ));
+        }
+
+        return records;
     }
 }

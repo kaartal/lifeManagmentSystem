@@ -8,7 +8,6 @@ import org.bson.Document;
 
 import java.util.ArrayList;
 
-
 public class HabitInformationTransfer {
 
     private final MongoCollection<Document> collection;
@@ -17,7 +16,6 @@ public class HabitInformationTransfer {
         MongoDatabase db = MongodbConnection.getDatabase();
         collection = db.getCollection("habitTracker");
     }
-
 
     public void addHabitRecord(HabitRecord record) {
         Document doc = new Document("userEmail", record.getUserEmail())
@@ -33,22 +31,21 @@ public class HabitInformationTransfer {
         FindIterable<Document> docs = collection.find(new Document("userEmail", userEmail));
 
         for (Document doc : docs) {
-            HabitRecord r = new HabitRecord(
+            records.add(new HabitRecord(
                     doc.getString("userEmail"),
                     doc.getString("habit"),
                     doc.getBoolean("completed"),
                     doc.getString("date")
-            );
-            records.add(r);
+            ));
         }
         return records;
     }
-
 
     public double getCompletionPercentage(String userEmail, String habit) {
         ArrayList<HabitRecord> records = getAllRecords(userEmail);
         int total = 0;
         int done = 0;
+
         for (HabitRecord r : records) {
             if (r.getHabit().equals(habit)) {
                 total++;
@@ -60,10 +57,11 @@ public class HabitInformationTransfer {
 
 
     public ArrayList<String> getUniqueHabits(String userEmail) {
-        ArrayList<HabitRecord> records = getAllRecords(userEmail);
         ArrayList<String> habits = new ArrayList<>();
-        for (HabitRecord r : records) {
-            if (!habits.contains(r.getHabit())) habits.add(r.getHabit());
+        for (HabitRecord r : getAllRecords(userEmail)) {
+            if (!habits.contains(r.getHabit())) {
+                habits.add(r.getHabit());
+            }
         }
         return habits;
     }
